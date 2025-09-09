@@ -1,0 +1,38 @@
+const userModel = require('../models/userModel');
+const userService = require('../services/userService');
+const { validationResult } = require('express-validator');
+
+module.exports.registerUser = async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  console.log(req.body);
+  
+  try {
+    const { fullname, email, password } = req.body;
+
+    // Hash password
+    const hashedPassword = await userModel.hashPassword(password);
+
+    // Create user
+    const user = await userService.createUser({
+      firstname: fullname.firstname,   
+      lastname: fullname.lastname,
+      email,
+      password: hashedPassword,
+    });
+
+    // Generate JWT token
+    const token = user.generateAuthToken();
+
+    res.status(201).json({
+      message: 'User registered successfully',
+      token,
+      user,
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
