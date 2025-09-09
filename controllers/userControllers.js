@@ -1,6 +1,6 @@
-const userModel = require('../models/userModel');
-const userService = require('../services/userService');
-const { validationResult } = require('express-validator');
+const userModel = require("../models/userModel");
+const userService = require("../services/userService");
+const { validationResult } = require("express-validator");
 
 module.exports.registerUser = async (req, res, next) => {
   const errors = validationResult(req);
@@ -8,8 +8,6 @@ module.exports.registerUser = async (req, res, next) => {
     return res.status(400).json({ errors: errors.array() });
   }
 
-  console.log(req.body);
-  
   try {
     const { fullname, email, password } = req.body;
 
@@ -18,7 +16,7 @@ module.exports.registerUser = async (req, res, next) => {
 
     // Create user
     const user = await userService.createUser({
-      firstname: fullname.firstname,   
+      firstname: fullname.firstname,
       lastname: fullname.lastname,
       email,
       password: hashedPassword,
@@ -28,11 +26,36 @@ module.exports.registerUser = async (req, res, next) => {
     const token = user.generateAuthToken();
 
     res.status(201).json({
-      message: 'User registered successfully',
+      message: "User registered successfully",
       token,
       user,
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
+};
+
+module.exports.loginUser = async (req, res, next) => {
+  console.log(req.body);
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+  const { email, password } = req.body;
+
+  const user = await userModel.findOne({ email }).select("+password");
+  if (!user) {
+    return res.status(401).json({ error: "Invalid email or password" });
+  }
+
+  const isMatch = await user.comparePassword(password);
+  if (!isMatch) {
+    return res.status(401).json({ error: "Invalid email or password" });
+  }
+  const token = user.generateAuthToken();
+  res.status(201).json({
+    message: "Login successful",
+    token,
+    user,
+  });
 };

@@ -19,5 +19,11 @@ router.post(
   ],
   userController.registerUser
 );
+//login
+router.post('/login',[
+  body('email').isEmail().withMessage('Please provide a valid email'),
+  body('password').notEmpty().withMessage('Password is required')   
+], userController.loginUser);
+
 
 module.exports = router;
